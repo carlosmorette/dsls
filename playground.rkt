@@ -5,15 +5,9 @@
 (require syntax/parse)
 (require "concat.rkt")
 
-(provide interpret-concat-program interpret-concat-sequence)
+(provide interpret-concat-program interpret-concat-sequence tokenize)
 
 ;; input -> tokenize -> parse -> interpret
-
-(define a-parsed-value
-  (parse (list
-          (token 'STRING "carlos ")
-          (token 'CONCAT-SYMBOL "<>")
-          (token 'STRING "morette"))))
 
 ;; Lexer/ Tokenize
 (define (tokenize ip)
@@ -27,9 +21,6 @@
   (define (next-token) (my-lexer ip))
   next-token)
 
-(provide tokenize)
-
-
 (define (interpret-concat-program concat-stx)
   (syntax-parse concat-stx
     [({~literal concat-program} concat-sequences-stx ...)
@@ -41,3 +32,7 @@
   (syntax-parse concat-sequence-stx
     [({~literal concat-sequence} s1 _ s2)
      (string-append (syntax-e #'s1) (syntax-e #'s2))]))
+
+
+;; Test
+;; (interpret-concat-program (parse (tokenize (open-input-string "carlos <> morette joao <> da silva"))))
