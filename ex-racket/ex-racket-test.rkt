@@ -1,6 +1,12 @@
 #lang reader "reader.rkt"
 
-1 + 2 
-3 * 3
-4 / 3
-1 - 1
+3 + 3
+
+def resultado() do
+  10 / 2
+end
+
+def nothing() do
+end
+
+2 + 3
