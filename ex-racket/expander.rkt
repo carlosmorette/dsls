@@ -4,9 +4,11 @@
           syntax/parse
           racket/syntax))
 
-(provide (rename-out (ex-racket-program #%module-begin)))
-
-(provide function-definition operation)
+(provide
+ function-definition
+ operation
+ variable-definition
+ (rename-out (ex-racket-program #%module-begin)))
 
 (define-syntax (ex-racket-program stx)
   (syntax-parse stx
@@ -73,5 +75,14 @@
      (with-syntax ([name (make-identifier #'function-name)])
        #'(begin
            (define (name) body ...)
+           (provide name)))]))
+
+(define-syntax (variable-definition stx)
+  (syntax-parse stx
+    [({~literal variable-definition} var-name "=" var-value)
+     (with-syntax ([name (make-identifier #'var-name)]
+                   [value (syntax-e #'var-value)])
+       #'(begin
+           (define name value)
            (provide name)))]))
 
