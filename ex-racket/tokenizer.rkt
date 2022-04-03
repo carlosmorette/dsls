@@ -15,6 +15,7 @@
      [")" (token 'RIGHT-PAREN lexeme)]
      ["do" (token 'DO-SCOPE lexeme)]
      ["end" (token 'END-SCOPE lexeme)]
+     ["=" (token 'RECEIVE-OPERATOR lexeme)]
      [(:or (from/to "\"" "\"") (from/to "'" "'")) (token 'STRING lexeme)]
      [(repetition 1 +inf.0 alphabetic) (token 'REFERENCE-VAR lexeme)]
      [(repetition 1 +inf.0 numeric) (token 'NUMBER (string->number lexeme))]

@@ -16,46 +16,62 @@
         #'(#%module-begin
            program ...)])]))
 
-(define-for-syntax (eval-operation operator n1 n2)
-  (apply operator (list (syntax-e #'n1) (syntax-e #'n2))))
 
-(define-syntax (operation stx)
+(define-syntax (operation stx) 
   (syntax-parse stx
-    [(operation n1 "+" n2)
-     #'(+ (syntax-e #'n1) (syntax-e #'n2))]
+    [(operation n1 "+" n2)  
+     (with-syntax ([nc1 (check-operation-value #'n1)]  
+                   [nc2 (check-operation-value #'n2)])
+       #'(+ nc1 nc2))]
 
-    [(operation n1 "-" n2)
-     #'(- (syntax-e #'n1) (syntax-e #'n2))]
+    [(operation n1 "-" n2)  
+     (with-syntax ([nc1 (check-operation-value #'n1)]  
+                   [nc2 (check-operation-value #'n2)])
+       #'(- nc1 nc2))]
     
-    [(operation n1 "*" n2)
-     #'(* (syntax-e #'n1) (syntax-e #'n2))]
+    [(operation n1 "*" n2)  
+     (with-syntax ([nc1 (check-operation-value #'n1)]  
+                   [nc2 (check-operation-value #'n2)])
+       #'(* nc1 nc2))]
     
-    [(operation n1 "/" n2)
-     #'(/ (syntax-e #'n1) (syntax-e #'n2))]))
+    [(operation n1 "/" n2)  
+     (with-syntax ([nc1 (check-operation-value #'n1)]  
+                   [nc2 (check-operation-value #'n2)])
+       #'(/ nc1 nc2))]))
 
-(define-for-syntax (datum->identifier datum)
-  (format-id datum "~a" (format "~a" (syntax->datum datum))))
+(define-for-syntax (check-operation-value value)
+  (let ([r (syntax-e value)])
+    (if (number? r)
+        r
+        (make-identifier value))))
+
+(define-for-syntax (make-identifier value)
+  (format-id value "~a" (format "~a" (syntax-e value))))
+
+(define-for-syntax (make-head-function func-name parameters)
+  (append (list func-name)
+          (map (lambda (i)
+                 (make-identifier i))
+               parameters)))
 
 (define-syntax (function-definition stx)
-  (syntax-case stx ()
-    [(function-definition _ function-name _ _ _ _)
-     (with-syntax ([name (datum->identifier #'function-name)])
+  (syntax-parse stx    
+    [({~literal function-definition} "def" function-name _ _ _ _)
+     (with-syntax ([name (make-identifier #'function-name)])
        #'(begin
            (define (name) (void))
            (provide name)))]
+
+    [({~literal function-definition} "def" function-name _ params ... ")" _ body ... _)
+     (with-syntax* ([name (make-identifier #'function-name)]
+                    [name-and-params (make-head-function #'name (syntax->list #'(params ...)))])
+       #'(begin
+           (define name-and-params body ...)
+           (provide name)))]
     
-    [(function-definition _ function-name _ _ _ body ... _)
-     (with-syntax ([name (datum->identifier #'function-name)])
+    [({~literal function-definition} "def" function-name _ _ _ body ... _)
+     (with-syntax ([name (make-identifier #'function-name)])
        #'(begin
            (define (name) body ...)
            (provide name)))]))
-
-;; provavelmente isso aqui vai mudar
-(define-for-syntax (evaluate-parameters parameters-stx function-name)
-  (displayln parameters-stx)
-  (syntax-parse parameters-stx
-    [({~literal parameter} param-name ...)
-     (append (list function-name)
-             (for/fold ([params (list)]) ([p (syntax->list #'(param-name ...))])
-               (append params p)))]))
 

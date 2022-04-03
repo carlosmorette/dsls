@@ -1,7 +1,6 @@
 #lang brag
 
-ex-racket-program: (function-definition | operation)*
-function-definition: DEF-FUNC REFERENCE-VAR LEFT-PAREN parameter* RIGHT-PAREN DO-SCOPE (operation* value*) END-SCOPE
-operation: NUMBER NUMBER-OPERATOR NUMBER
-parameter: REFERENCE-VAR
-value: STRING | NUMBER
+ex-racket-program: (function-definition | operation | variable-definition)*
+function-definition: DEF-FUNC REFERENCE-VAR LEFT-PAREN REFERENCE-VAR* RIGHT-PAREN DO-SCOPE operation* END-SCOPE
+operation: (NUMBER | REFERENCE-VAR) NUMBER-OPERATOR (NUMBER | REFERENCE-VAR)
+variable-definition: REFERENCE-VAR RECEIVE-OPERATOR (NUMBER | STRING)
