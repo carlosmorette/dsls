@@ -8,44 +8,16 @@
  function-definition
  operation
  variable-definition
+ print-function
+ body-function
  (rename-out (ex-racket-program #%module-begin)))
 
-(define-syntax (ex-racket-program stx)
-  (syntax-parse stx
-    [(_ (uerp ...))
-     (syntax-parse #'(uerp ...)
-       [(_ program ...)
-        #'(#%module-begin
-           program ...)])]))
-
-
-(define-syntax (operation stx) 
-  (syntax-parse stx
-    [(operation n1 "+" n2)  
-     (with-syntax ([nc1 (check-operation-value #'n1)]  
-                   [nc2 (check-operation-value #'n2)])
-       #'(+ nc1 nc2))]
-
-    [(operation n1 "-" n2)  
-     (with-syntax ([nc1 (check-operation-value #'n1)]  
-                   [nc2 (check-operation-value #'n2)])
-       #'(- nc1 nc2))]
-    
-    [(operation n1 "*" n2)  
-     (with-syntax ([nc1 (check-operation-value #'n1)]  
-                   [nc2 (check-operation-value #'n2)])
-       #'(* nc1 nc2))]
-    
-    [(operation n1 "/" n2)  
-     (with-syntax ([nc1 (check-operation-value #'n1)]  
-                   [nc2 (check-operation-value #'n2)])
-       #'(/ nc1 nc2))]))
-
-(define-for-syntax (check-operation-value value)
-  (let ([r (syntax-e value)])
-    (if (number? r)
-        r
-        (make-identifier value))))
+(define-for-syntax (check-value value)
+  (cond
+    [(number? (syntax-e value)) (syntax-e value)]
+    [(string? (syntax-e value)) (syntax-e value)]
+    [else
+     (make-identifier value)]))
 
 (define-for-syntax (make-identifier value)
   (format-id value "~a" (format "~a" (syntax-e value))))
@@ -55,6 +27,14 @@
           (map (lambda (i)
                  (make-identifier i))
                parameters)))
+
+(define-syntax (ex-racket-program stx)
+  (syntax-parse stx
+    [(_ (uerp ...))
+     (syntax-parse #'(uerp ...)
+       [(_ program ...)
+        #'(#%module-begin
+           program ...)])]))
 
 (define-syntax (function-definition stx)
   (syntax-parse stx    
@@ -77,6 +57,32 @@
            (define (name) body ...)
            (provide name)))]))
 
+(define-syntax (body-function stx)
+  (syntax-parse stx
+    [({~literal body-function} body ...) #'(begin body ...)]))
+
+(define-syntax (operation stx)
+  (syntax-parse stx
+    [(operation n1 "+" n2)  
+     (with-syntax ([nc1 (check-value #'n1)]  
+                   [nc2 (check-value #'n2)])
+       #'(+ nc1 nc2))]
+
+    [(operation n1 "-" n2)  
+     (with-syntax ([nc1 (check-value #'n1)]  
+                   [nc2 (check-value #'n2)])
+       #'(- nc1 nc2))]
+    
+    [(operation n1 "*" n2)  
+     (with-syntax ([nc1 (check-value #'n1)]  
+                   [nc2 (check-value #'n2)])
+       #'(* nc1 nc2))]
+    
+    [(operation n1 "/" n2)  
+     (with-syntax ([nc1 (check-value #'n1)]  
+                   [nc2 (check-value #'n2)])
+       #'(/ nc1 nc2))]))
+
 (define-syntax (variable-definition stx)
   (syntax-parse stx
     [({~literal variable-definition} var-name "=" var-value)
@@ -86,3 +92,8 @@
            (define name value)
            (provide name)))]))
 
+(define-syntax (print-function stx)
+  (syntax-parse stx
+    [({~literal print-function} "print" _ value _)
+     (with-syntax ([p-value (check-value #'value)])
+       #'(displayln p-value))]))
