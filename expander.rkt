@@ -13,11 +13,11 @@
  (rename-out (ex-racket-program #%module-begin)))
 
 (define-for-syntax (check-value value)
-  (cond
-    [(number? (syntax-e value)) (syntax-e value)]
-    [(string? (syntax-e value)) (syntax-e value)]
-    [else
-     (make-identifier value)]))
+  (let ([rv (syntax-e value)])
+    (cond
+      [(number? rv) rv]
+      [(regexp-match #rx"\".*\"" rv) rv]
+      [else (make-identifier value)])))
 
 (define-for-syntax (make-identifier value)
   (format-id value "~a" (format "~a" (syntax-e value))))
