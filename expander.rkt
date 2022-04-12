@@ -10,6 +10,7 @@
  variable-definition
  print-function
  body-function
+ comment
  (rename-out (ex-racket-program #%module-begin)))
 
 (define-for-syntax (check-value value)
@@ -97,3 +98,9 @@
     [({~literal print-function} "print" _ value _)
      (with-syntax ([p-value (check-value #'value)])
        #'(displayln p-value))]))
+
+(define-syntax (comment stx)
+  (syntax-parse stx
+    [({~literal comment} _ ...)
+     #'(begin)]))
+
