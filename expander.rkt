@@ -11,14 +11,20 @@
  print-function
  body-function
  comment
- (rename-out (ex-racket-program #%module-begin)))
+ invoke-function
+ ex-racket-program
+ #%module-begin)
 
-(define-for-syntax (check-value value)
+(define-for-syntax (eval-value value)
   (let ([rv (syntax-e value)])
     (cond
       [(number? rv) rv]
       [(regexp-match #rx"\".*\"" rv) rv]
       [else (make-identifier value)])))
+
+(define-for-syntax (eval-param-list params-list)
+  (map (lambda (i)
+         (eval-value i)) params-list))
 
 (define-for-syntax (make-identifier value)
   (format-id value "~a" (format "~a" (syntax-e value))))
@@ -31,11 +37,9 @@
 
 (define-syntax (ex-racket-program stx)
   (syntax-parse stx
-    [(_ (uerp ...))
-     (syntax-parse #'(uerp ...)
-       [(_ program ...)
-        #'(#%module-begin
-           program ...)])]))
+    [({~literal ex-racket-program} program ...)
+     #'(begin
+         program ...)]))
 
 (define-syntax (function-definition stx)
   (syntax-parse stx    
@@ -45,7 +49,7 @@
            (define (name) (void))
            (provide name)))]
 
-    [({~literal function-definition} "def" function-name _ params ... ")" _ body ... _)
+    [({~literal function-definition} "def" function-name "(" params ... ")" _ body ... _)
      (with-syntax* ([name (make-identifier #'function-name)]
                     [name-and-params (make-head-function #'name (syntax->list #'(params ...)))])
        #'(begin
@@ -65,23 +69,23 @@
 (define-syntax (operation stx)
   (syntax-parse stx
     [(operation n1 "+" n2)  
-     (with-syntax ([nc1 (check-value #'n1)]  
-                   [nc2 (check-value #'n2)])
+     (with-syntax ([nc1 (eval-value #'n1)]  
+                   [nc2 (eval-value #'n2)])
        #'(+ nc1 nc2))]
 
     [(operation n1 "-" n2)  
-     (with-syntax ([nc1 (check-value #'n1)]  
-                   [nc2 (check-value #'n2)])
+     (with-syntax ([nc1 (eval-value #'n1)]  
+                   [nc2 (eval-value #'n2)])
        #'(- nc1 nc2))]
     
     [(operation n1 "*" n2)  
-     (with-syntax ([nc1 (check-value #'n1)]  
-                   [nc2 (check-value #'n2)])
+     (with-syntax ([nc1 (eval-value #'n1)]  
+                   [nc2 (eval-value #'n2)])
        #'(* nc1 nc2))]
     
     [(operation n1 "/" n2)  
-     (with-syntax ([nc1 (check-value #'n1)]  
-                   [nc2 (check-value #'n2)])
+     (with-syntax ([nc1 (eval-value #'n1)]  
+                   [nc2 (eval-value #'n2)])
        #'(/ nc1 nc2))]))
 
 (define-syntax (variable-definition stx)
@@ -96,11 +100,20 @@
 (define-syntax (print-function stx)
   (syntax-parse stx
     [({~literal print-function} "print" _ value _)
-     (with-syntax ([p-value (check-value #'value)])
+     (with-syntax ([p-value (eval-value #'value)])
        #'(displayln p-value))]))
 
 (define-syntax (comment stx)
   (syntax-parse stx
     [({~literal comment} _ ...)
      #'(begin)]))
+
+(define-syntax (invoke-function stx)
+  (syntax-parse stx
+    [({~literal invoke-function} function-name  _ params ... _)
+     (with-syntax* ([name (make-identifier #'function-name)]
+                    [checked-params (eval-param-list (syntax->list #'(params ...)))]
+                    [xpto (map (lambda (i) (syntax-e i)) (syntax->list #'(params ...)))])
+       (displayln (append (list 1) (syntax-e #'xpto)))
+       #'(append (list 1) xpto))]))
 
