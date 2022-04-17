@@ -10,8 +10,6 @@
  variable-definition
  print-function
  body-function
- comment
- invoke-function
  ex-racket-program
  #%module-begin)
 
@@ -43,20 +41,20 @@
 
 (define-syntax (function-definition stx)
   (syntax-parse stx    
-    [({~literal function-definition} "def" function-name _ _ _ _)
+    [({~literal function-definition} function-name)
      (with-syntax ([name (make-identifier #'function-name)])
        #'(begin
            (define (name) (void))
            (provide name)))]
 
-    [({~literal function-definition} "def" function-name "(" params ... ")" _ body ... _)
+    [({~literal function-definition} function-name (params ...) body ...)
      (with-syntax* ([name (make-identifier #'function-name)]
                     [name-and-params (make-head-function #'name (syntax->list #'(params ...)))])
        #'(begin
            (define name-and-params body ...)
            (provide name)))]
     
-    [({~literal function-definition} "def" function-name _ _ _ body ... _)
+    [({~literal function-definition} function-name body ...)
      (with-syntax ([name (make-identifier #'function-name)])
        #'(begin
            (define (name) body ...)
@@ -64,7 +62,8 @@
 
 (define-syntax (body-function stx)
   (syntax-parse stx
-    [({~literal body-function} body ...) #'(begin body ...)]))
+    [({~literal body-function} body ...)
+     #'(begin body ...)]))
 
 (define-syntax (operation stx)
   (syntax-parse stx
@@ -90,7 +89,7 @@
 
 (define-syntax (variable-definition stx)
   (syntax-parse stx
-    [({~literal variable-definition} var-name "=" var-value)
+    [({~literal variable-definition} var-name var-value)
      (with-syntax ([name (make-identifier #'var-name)]
                    [value (syntax-e #'var-value)])
        #'(begin
@@ -99,21 +98,7 @@
 
 (define-syntax (print-function stx)
   (syntax-parse stx
-    [({~literal print-function} "print" _ value _)
+    [({~literal print-function} "print" value)
      (with-syntax ([p-value (eval-value #'value)])
        #'(displayln p-value))]))
-
-(define-syntax (comment stx)
-  (syntax-parse stx
-    [({~literal comment} _ ...)
-     #'(begin)]))
-
-(define-syntax (invoke-function stx)
-  (syntax-parse stx
-    [({~literal invoke-function} function-name  _ params ... _)
-     (with-syntax* ([name (make-identifier #'function-name)]
-                    [checked-params (eval-param-list (syntax->list #'(params ...)))]
-                    [xpto (map (lambda (i) (syntax-e i)) (syntax->list #'(params ...)))])
-       (displayln (append (list 1) (syntax-e #'xpto)))
-       #'(append (list 1) xpto))]))
 

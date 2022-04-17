@@ -1,20 +1,18 @@
 # Features
 ```racket
-#lang reader "reader.rkt"
+# Comments
 
-# "Comments"
-
-# "Functions"
-def sum(a b) do
+# Functions
+def sum(a, b) do
   a + b
 end
 
-# "Variable declaration"
+# Variable declaration
 name = "Carlos Morette"
 
-# "Print function"
+# Print function
 print(name)
 
-# "Hello World"
+# Hello World
 print("Hello World")
 ```
